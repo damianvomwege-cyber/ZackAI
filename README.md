@@ -4,7 +4,7 @@ ZackAI ist eine Next.js‑App mit:
 - Registrierung, Login und E‑Mail‑Verifikation (Brevo SMTP)
 - Mehreren Chat‑Sessions pro User
 - Groq‑Integration mit Free‑Modus (begrenzte Nutzung) und Pro‑Modus (eigener API‑Key)
-- SQLite + Prisma
+- Postgres (Neon empfohlen) + Prisma
 
 ## Setup
 
@@ -23,6 +23,7 @@ copy .env.example .env
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
+- `DATABASE_URL`: Postgres URL (z. B. Neon)
 - Brevo SMTP Felder setzen
 - Optional: `GROQ_API_KEY` für Free‑Modus nutzen
 - Optional: `PRO_MODEL` für Standard‑Modell im Pro‑Modus
@@ -41,3 +42,4 @@ npm run dev
 - Ohne eigenen Groq‑Key ist die Nutzung begrenzt und hängt vom `GROQ_API_KEY` des Servers ab.
 - User‑Keys werden verschlüsselt gespeichert (AES‑256‑GCM).
 - E‑Mail‑Verifikation ist Pflicht.
+- Vercel: Build Command auf `npx prisma generate && npx prisma migrate deploy && next build` setzen.

@@ -27,7 +27,12 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className={`${sora.variable} ${jetbrainsMono.variable} antialiased`}>
-        {children}
+        <div className="flex min-h-screen flex-col">
+          <div className="flex-1">{children}</div>
+          <footer className="px-6 py-6 text-center text-xs text-[color:var(--muted)]">
+            Made by Damian
+          </footer>
+        </div>
       </body>
     </html>
   );
