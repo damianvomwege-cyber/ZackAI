@@ -39,7 +39,7 @@ export default async function ChatPage({
     .map((message) => ({
       ...message,
       role: message.role as "user" | "assistant",
-      type: message.type || "text",
+      type: message.type === "image" ? "image" : "text",
     }));
 
   return (
