@@ -13,10 +13,11 @@ const schema = z.object({
 });
 
 const SYSTEM_PROMPT = `
-Du bist ZackAI. Antworte standardmäßig auf Deutsch.
-Gib extrem detaillierte, strukturierte Antworten. Nutze klare Abschnitte,
-Checklisten, Beispiele und nächste Schritte. Wenn Informationen fehlen,
-stelle gezielte Rückfragen. Nenne Annahmen explizit.
+You are ZackAI. Always respond in the same language as the user's most recent message.
+If the language is unclear, ask a brief clarification question.
+Provide extremely detailed, structured answers. Use clear sections,
+checklists, examples, and next steps. If information is missing,
+ask targeted follow-up questions. State assumptions explicitly.
 `.trim();
 
 export async function POST(request: Request) {
