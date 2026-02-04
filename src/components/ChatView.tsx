@@ -69,6 +69,15 @@ export default function ChatView({
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setMessages(initialMessages);
+    setInput("");
+    setError(null);
+    setLoading(false);
+  }, [chatId, initialMessages]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
