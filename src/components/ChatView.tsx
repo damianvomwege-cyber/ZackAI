@@ -55,15 +55,12 @@ export default function ChatView({
   const [model, setModel] = useState(proModelDefault);
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-
-  const speechSupported =
-    typeof window !== "undefined" &&
-    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -78,6 +75,7 @@ export default function ChatView({
   }, [chatId, initialMessages]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -86,8 +84,13 @@ export default function ChatView({
         (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionConstructorLike })
           .webkitSpeechRecognition) ??
       null;
-    if (!SpeechRecognition) return;
 
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    setSpeechSupported(true);
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
     recognition.interimResults = false;
@@ -102,6 +105,7 @@ export default function ChatView({
     };
     recognitionRef.current = recognition;
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
