@@ -206,11 +206,11 @@ export default function ChatView({
     setUploading(false);
   }
 
-  async function uploadAudio(file: File) {
+  async function uploadAudioBlob(blob: Blob, filename: string) {
     setError(null);
     setUploadingAudio(true);
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", blob, filename);
     formData.append("chatId", chatId);
     const response = await fetch("/api/uploads", {
       method: "POST",
@@ -237,6 +237,10 @@ export default function ChatView({
       await analyzeAudio(message.uploadId);
     }
     setUploadingAudio(false);
+  }
+
+  async function uploadAudio(file: File) {
+    await uploadAudioBlob(file, file.name || `audio-${Date.now()}.webm`);
   }
 
   async function analyzeAudio(uploadId?: string | null) {
@@ -287,6 +291,13 @@ export default function ChatView({
     const text = data?.text?.toString().trim();
     if (text) {
       setInput((prev) => (prev ? `${prev} ${text}` : text));
+      setTranscribing(false);
+      return;
+    }
+    if (data?.noSpeech) {
+      setTranscribing(false);
+      await uploadAudioBlob(blob, `recording-${Date.now()}.webm`);
+      return;
     }
     setTranscribing(false);
   }

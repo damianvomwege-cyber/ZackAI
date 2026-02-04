@@ -87,10 +87,7 @@ export async function POST(request: NextRequest) {
 
     const text = data?.text?.toString().trim();
     if (!text) {
-      return NextResponse.json(
-        { error: "Leere Transkription erhalten." },
-        { status: 502 }
-      );
+      return NextResponse.json({ text: "", noSpeech: true });
     }
 
     if (apiKeyRecord) {

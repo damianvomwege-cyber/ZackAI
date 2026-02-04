@@ -105,10 +105,18 @@ export async function POST(request: Request) {
 
     const transcript = transcriptData?.text?.toString().trim();
     if (!transcript) {
-      return NextResponse.json(
-        { error: "Leere Transkription erhalten." },
-        { status: 502 }
-      );
+      const assistant = await prisma.message.create({
+        data: {
+          chatId: chat.id,
+          role: "assistant",
+          type: "text",
+          content:
+            "Ich habe in der Aufnahme keine Sprache erkannt. Wenn es Musik oder Geräusche sind, sag mir kurz, was ich analysieren soll (z.B. Stimmung, Instrumente, Geräuschquellen).",
+        },
+      });
+      return NextResponse.json({
+        assistant: { id: assistant.id, content: assistant.content },
+      });
     }
 
     const messages: GroqMessage[] = [
