@@ -4,4 +4,7 @@ export const config = {
   freeMaxTokens: Number(process.env.FREE_MAX_TOKENS ?? "512") || 512,
   proMaxTokens: Number(process.env.PRO_MAX_TOKENS ?? "2048") || 2048,
   temperature: Number(process.env.AI_TEMPERATURE ?? "0.3") || 0.3,
+  sttModel: process.env.STT_MODEL || "whisper-large-v3-turbo",
+  sttMaxBytes:
+    Math.max(Number(process.env.STT_MAX_MB ?? "10") || 10, 1) * 1024 * 1024,
 };

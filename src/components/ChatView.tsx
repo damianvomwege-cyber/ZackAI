@@ -56,11 +56,14 @@ export default function ChatView({
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaChunksRef = useRef<Blob[]>([]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -76,7 +79,9 @@ export default function ChatView({
     setLoading(false);
     setUploading(false);
     setRecording(false);
+    setTranscribing(false);
     recognitionRef.current?.stop();
+    mediaRecorderRef.current?.stop();
   }, [chatId, initialMessages]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -93,26 +98,33 @@ export default function ChatView({
         (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionConstructorLike })
           .webkitSpeechRecognition) ??
       null;
+    const hasMediaRecorder =
+      typeof window.MediaRecorder !== "undefined" &&
+      typeof navigator !== "undefined" &&
+      Boolean(navigator.mediaDevices?.getUserMedia);
 
-    if (!SpeechRecognition) {
+    if (!SpeechRecognition && !hasMediaRecorder) {
       setSpeechSupported(false);
       return;
     }
 
     setSpeechSupported(true);
-    const recognition = new SpeechRecognition();
-    recognition.lang = navigator.language || "en-US";
-    recognition.interimResults = false;
-    recognition.onresult = (event) => {
-      const transcript = event?.results?.[0]?.[0]?.transcript || "";
-      if (transcript) {
-        setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
-      }
-    };
-    recognition.onend = () => {
-      setRecording(false);
-    };
-    recognitionRef.current = recognition;
+
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = navigator.language || "en-US";
+      recognition.interimResults = false;
+      recognition.onresult = (event) => {
+        const transcript = event?.results?.[0]?.[0]?.transcript || "";
+        if (transcript) {
+          setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+      };
+      recognition.onend = () => {
+        setRecording(false);
+      };
+      recognitionRef.current = recognition;
+    }
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -185,18 +197,82 @@ export default function ChatView({
     setUploading(false);
   }
 
-  function toggleRecording() {
-    if (!recognitionRef.current) {
+  async function transcribeAudio(blob: Blob) {
+    setError(null);
+    setTranscribing(true);
+    const formData = new FormData();
+    formData.append("file", blob, `speech-${Date.now()}.webm`);
+    formData.append("language", navigator.language || "en");
+
+    const response = await fetch("/api/ai/transcribe", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(data?.error || "Transkription fehlgeschlagen.");
+      setTranscribing(false);
+      return;
+    }
+    const text = data?.text?.toString().trim();
+    if (text) {
+      setInput((prev) => (prev ? `${prev} ${text}` : text));
+    }
+    setTranscribing(false);
+  }
+
+  async function toggleRecording() {
+    setError(null);
+
+    if (recording) {
+      recognitionRef.current?.stop();
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+
+    if (recognitionRef.current) {
+      setRecording(true);
+      recognitionRef.current.start();
+      return;
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.getUserMedia ||
+      typeof MediaRecorder === "undefined"
+    ) {
       setError("Speech-to-Text wird in diesem Browser nicht unterstützt.");
       return;
     }
-    setError(null);
-    if (recording) {
-      recognitionRef.current.stop();
-      return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      mediaChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          mediaChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setRecording(false);
+        const blob = new Blob(mediaChunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        });
+        if (blob.size > 0) {
+          await transcribeAudio(blob);
+        }
+      };
+
+      recorder.start();
+      setRecording(true);
+    } catch {
+      setError("Mikrofonzugriff fehlgeschlagen.");
     }
-    setRecording(true);
-    recognitionRef.current.start();
   }
 
   if (!mounted) {
@@ -306,10 +382,14 @@ export default function ChatView({
             <button
               type="button"
               onClick={toggleRecording}
-              disabled={!speechSupported}
+              disabled={!speechSupported || transcribing}
               className="rounded-2xl border border-[color:var(--border)] px-6 py-3 text-sm font-semibold transition hover:border-[color:var(--accent)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {recording ? "Stop Aufnahme" : "Spracheingabe"}
+              {recording
+                ? "Stop Aufnahme"
+                : transcribing
+                ? "Transkribiere..."
+                : "Spracheingabe"}
             </button>
           </div>
         </div>
