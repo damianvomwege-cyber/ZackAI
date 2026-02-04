@@ -30,7 +30,7 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col">
           <div className="flex-1">{children}</div>
           <footer className="px-6 py-6 text-center text-xs text-[color:var(--muted)]">
-            Made by Damian
+            made by damian
           </footer>
         </div>
       </body>

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
+
 const MAX_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: Request) {
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
   const chatId = formData.get("chatId")?.toString();
   const file = formData.get("file");
 
-  if (!chatId || !(file instanceof File)) {
+  if (!chatId || !(file instanceof Blob)) {
     return NextResponse.json({ error: "Datei fehlt." }, { status: 400 });
   }
 

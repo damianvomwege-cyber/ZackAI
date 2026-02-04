@@ -69,6 +69,18 @@ export default function ChatView({
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setMessages(initialMessages);
+    setInput("");
+    setError(null);
+    setLoading(false);
+    setUploading(false);
+    setRecording(false);
+    recognitionRef.current?.stop();
+  }, [chatId, initialMessages]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -90,7 +102,7 @@ export default function ChatView({
 
     setSpeechSupported(true);
     const recognition = new SpeechRecognition();
-    recognition.lang = "de-DE";
+    recognition.lang = navigator.language || "en-US";
     recognition.interimResults = false;
     recognition.onresult = (event) => {
       const transcript = event?.results?.[0]?.[0]?.transcript || "";
@@ -176,7 +188,7 @@ export default function ChatView({
 
   function toggleRecording() {
     if (!recognitionRef.current) {
-      setError("Speech-to-Text wird in diesem Browser nicht unterstützt.");
+      setError("Speech-to-Text wird in diesem Browser nicht unterstÃ¼tzt.");
       return;
     }
     setError(null);
@@ -191,7 +203,7 @@ export default function ChatView({
   if (!mounted) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-[color:var(--muted)]">
-        Lade Chat…
+        Lade Chatâ€¦
       </div>
     );
   }
@@ -205,11 +217,11 @@ export default function ChatView({
             ? "Pro-Modus aktiv: dein eigener Groq-Key wird genutzt."
             : sharedKeyAvailable
             ? `Free-Modus aktiv: begrenzter Kontext, Modell ${freeModel}.`
-            : "Kein API-Key konfiguriert. Ohne Key sind keine Antworten möglich."}
+            : "Kein API-Key konfiguriert. Ohne Key sind keine Antworten mÃ¶glich."}
         </p>
         {!hasApiKey && (
           <p className="mt-3 text-sm text-[color:var(--muted)]">
-            Für volle Power deinen Groq-Key in{" "}
+            FÃ¼r volle Power deinen Groq-Key in{" "}
             <Link
               className="font-semibold text-[color:var(--accent)]"
               href="/settings"
@@ -224,7 +236,7 @@ export default function ChatView({
       <div className="flex-1 space-y-4 rounded-3xl border border-[color:var(--border)] bg-white/80 p-6 shadow-[var(--shadow)]">
         {messages.length === 0 && (
           <p className="text-sm text-[color:var(--muted)]">
-            Starte mit einer Frage oder Idee. ZackAI antwortet ausführlich und
+            Starte mit einer Frage oder Idee. ZackAI antwortet ausfÃ¼hrlich und
             strukturiert.
           </p>
         )}
@@ -273,7 +285,7 @@ export default function ChatView({
             value={input}
             onChange={(event) => setInput(event.target.value)}
             rows={3}
-            placeholder="Schreibe deine Frage…"
+            placeholder="Schreibe deine Frageâ€¦"
             className="flex-1 resize-none rounded-2xl border border-[color:var(--border)] bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           />
           <div className="flex flex-col gap-3 sm:w-[180px]">
