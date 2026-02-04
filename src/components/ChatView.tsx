@@ -67,6 +67,7 @@ export default function ChatView({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
   const canUseMediaRecorderRef = useRef(false);
+  const recordingTimeoutRef = useRef<number | null>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -85,6 +86,10 @@ export default function ChatView({
     setTranscribing(false);
     recognitionRef.current?.stop();
     mediaRecorderRef.current?.stop();
+    if (recordingTimeoutRef.current) {
+      window.clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
   }, [chatId, initialMessages]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -292,6 +297,10 @@ export default function ChatView({
     if (recording) {
       recognitionRef.current?.stop();
       mediaRecorderRef.current?.stop();
+      if (recordingTimeoutRef.current) {
+        window.clearTimeout(recordingTimeoutRef.current);
+        recordingTimeoutRef.current = null;
+      }
       return;
     }
 
@@ -323,6 +332,11 @@ export default function ChatView({
 
         recorder.start();
         setRecording(true);
+        recordingTimeoutRef.current = window.setTimeout(() => {
+          if (mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+          }
+        }, 12000);
         return;
       } catch {
         setError("Mikrofonzugriff fehlgeschlagen.");
