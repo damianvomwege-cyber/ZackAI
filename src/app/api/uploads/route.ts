@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { config } from "@/lib/config";
 
 export const runtime = "nodejs";
 
-const MAX_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_AUDIO_BYTES = config.audioMaxBytes;
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
     data: {
       chatId: chat.id,
       role: "user",
-      type: "image",
+      type: isAudio ? "audio" : "image",
       content: "",
       uploadId: upload.id,
     },

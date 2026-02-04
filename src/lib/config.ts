@@ -7,4 +7,6 @@ export const config = {
   sttModel: process.env.STT_MODEL || "whisper-large-v3-turbo",
   sttMaxBytes:
     Math.max(Number(process.env.STT_MAX_MB ?? "10") || 10, 1) * 1024 * 1024,
+  audioMaxBytes:
+    Math.max(Number(process.env.AUDIO_MAX_MB ?? "20") || 20, 1) * 1024 * 1024,
 };

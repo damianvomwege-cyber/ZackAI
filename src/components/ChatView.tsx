@@ -7,7 +7,7 @@ type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  type?: "text" | "image";
+  type?: "text" | "image" | "audio";
   uploadId?: string | null;
 };
 
@@ -54,6 +54,7 @@ export default function ChatView({
   const [input, setInput] = useState("");
   const [model, setModel] = useState(proModelDefault);
   const [uploading, setUploading] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
   const [recording, setRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -61,6 +62,7 @@ export default function ChatView({
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
@@ -195,6 +197,67 @@ export default function ChatView({
       ]);
     }
     setUploading(false);
+  }
+
+  async function uploadAudio(file: File) {
+    setError(null);
+    setUploadingAudio(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("chatId", chatId);
+    const response = await fetch("/api/uploads", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(data?.error || "Audio-Upload fehlgeschlagen.");
+      setUploadingAudio(false);
+      return;
+    }
+    const message = data?.message;
+    if (message?.id) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: message.id,
+          role: "user",
+          type: "audio",
+          uploadId: message.uploadId,
+          content: "",
+        },
+      ]);
+      await analyzeAudio(message.uploadId);
+    }
+    setUploadingAudio(false);
+  }
+
+  async function analyzeAudio(uploadId?: string | null) {
+    if (!uploadId) return;
+    setError(null);
+    setLoading(true);
+    const response = await fetch("/api/ai/analyze-audio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId, uploadId }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(data?.error || "Audio-Analyse fehlgeschlagen.");
+      setLoading(false);
+      return;
+    }
+    if (data?.assistant?.id) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: data.assistant.id,
+          role: "assistant",
+          content: data.assistant.content || "",
+        },
+      ]);
+    }
+    setLoading(false);
   }
 
   async function transcribeAudio(blob: Blob) {
@@ -333,6 +396,14 @@ export default function ChatView({
                 className="h-auto w-full rounded-xl object-contain"
                 loading="lazy"
               />
+            ) : message.type === "audio" &&
+              typeof message.uploadId === "string" &&
+              message.uploadId.length > 0 ? (
+              <audio
+                controls
+                src={`/api/uploads/${message.uploadId}`}
+                className="w-full"
+              />
             ) : (
               message.content
             )}
@@ -381,6 +452,14 @@ export default function ChatView({
             </button>
             <button
               type="button"
+              onClick={() => audioInputRef.current?.click()}
+              disabled={uploadingAudio}
+              className="rounded-2xl border border-[color:var(--border)] px-6 py-3 text-sm font-semibold transition hover:border-[color:var(--accent)] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {uploadingAudio ? "Lade..." : "Audio hochladen"}
+            </button>
+            <button
+              type="button"
               onClick={toggleRecording}
               disabled={!speechSupported || transcribing}
               className="rounded-2xl border border-[color:var(--border)] px-6 py-3 text-sm font-semibold transition hover:border-[color:var(--accent)] disabled:cursor-not-allowed disabled:opacity-70"
@@ -402,6 +481,19 @@ export default function ChatView({
             const file = event.target.files?.[0];
             if (file) {
               uploadImage(file);
+              event.target.value = "";
+            }
+          }}
+        />
+        <input
+          ref={audioInputRef}
+          type="file"
+          accept="audio/*"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) {
+              uploadAudio(file);
               event.target.value = "";
             }
           }}
