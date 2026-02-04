@@ -50,6 +50,7 @@ export default function ChatView({
   freeModel: string;
   proModelDefault: string;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [model, setModel] = useState(proModelDefault);
@@ -62,18 +63,15 @@ export default function ChatView({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    setMessages(initialMessages);
-    setInput("");
-    setError(null);
-    setLoading(false);
-  }, [chatId, initialMessages]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -188,6 +186,14 @@ export default function ChatView({
     }
     setRecording(true);
     recognitionRef.current.start();
+  }
+
+  if (!mounted) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-[color:var(--muted)]">
+        Lade Chat…
+      </div>
+    );
   }
 
   return (
