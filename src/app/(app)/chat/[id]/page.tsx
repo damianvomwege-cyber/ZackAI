@@ -34,12 +34,20 @@ export default async function ChatPage({
   const sharedKeyAvailable = Boolean(process.env.GROQ_API_KEY);
   const proModelDefault = process.env.PRO_MODEL || config.freeModel;
 
-  const messages = chat.messages
+  const messages: Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    type: "text" | "image";
+    uploadId: string | null;
+  }> = chat.messages
     .filter((message) => message.role === "user" || message.role === "assistant")
     .map((message) => ({
-      ...message,
+      id: message.id,
       role: message.role as "user" | "assistant",
+      content: message.content,
       type: message.type === "image" ? "image" : "text",
+      uploadId: message.uploadId,
     }));
 
   return (
