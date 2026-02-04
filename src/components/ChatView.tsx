@@ -66,6 +66,7 @@ export default function ChatView({
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
+  const canUseMediaRecorderRef = useRef(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -104,6 +105,7 @@ export default function ChatView({
       typeof window.MediaRecorder !== "undefined" &&
       typeof navigator !== "undefined" &&
       Boolean(navigator.mediaDevices?.getUserMedia);
+    canUseMediaRecorderRef.current = hasMediaRecorder;
 
     if (!SpeechRecognition && !hasMediaRecorder) {
       setSpeechSupported(false);
@@ -293,49 +295,48 @@ export default function ChatView({
       return;
     }
 
+    if (canUseMediaRecorderRef.current) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+        mediaChunksRef.current = [];
+
+        recorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            mediaChunksRef.current.push(event.data);
+          }
+        };
+
+        recorder.onstop = async () => {
+          stream.getTracks().forEach((track) => track.stop());
+          setRecording(false);
+          const blob = new Blob(mediaChunksRef.current, {
+            type: recorder.mimeType || "audio/webm",
+          });
+          if (blob.size > 0) {
+            await transcribeAudio(blob);
+          } else {
+            setError("Keine Audiodaten aufgenommen.");
+          }
+        };
+
+        recorder.start();
+        setRecording(true);
+        return;
+      } catch {
+        setError("Mikrofonzugriff fehlgeschlagen.");
+        return;
+      }
+    }
+
     if (recognitionRef.current) {
       setRecording(true);
       recognitionRef.current.start();
       return;
     }
 
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.mediaDevices?.getUserMedia ||
-      typeof MediaRecorder === "undefined"
-    ) {
-      setError("Speech-to-Text wird in diesem Browser nicht unterstützt.");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      mediaChunksRef.current = [];
-
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          mediaChunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop());
-        setRecording(false);
-        const blob = new Blob(mediaChunksRef.current, {
-          type: recorder.mimeType || "audio/webm",
-        });
-        if (blob.size > 0) {
-          await transcribeAudio(blob);
-        }
-      };
-
-      recorder.start();
-      setRecording(true);
-    } catch {
-      setError("Mikrofonzugriff fehlgeschlagen.");
-    }
+    setError("Speech-to-Text wird in diesem Browser nicht unterstützt.");
   }
 
   if (!mounted) {
