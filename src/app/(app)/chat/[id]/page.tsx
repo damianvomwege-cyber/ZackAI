@@ -44,6 +44,7 @@ export default async function ChatPage({
 
   return (
     <ChatView
+      key={chat.id}
       chatId={chat.id}
       initialMessages={messages}
       hasApiKey={hasApiKey}
