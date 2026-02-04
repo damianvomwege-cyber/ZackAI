@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { unstable_noStore } from "next/cache";
 import ChatView from "@/components/ChatView";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,7 @@ export default async function ChatPage({
 }: {
   params: { id: string };
 }) {
+  unstable_noStore();
   const user = await requireUser();
   const chat = await prisma.chat.findFirst({
     where: { id: params.id, userId: user.id },
