@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 type ChatMessage = {
   id: string;
@@ -249,14 +248,14 @@ export default function ChatView({
                 : "bg-[rgba(31,122,118,0.08)] text-[color:var(--fg)]"
             }`}
           >
-            {message.type === "image" && message.uploadId ? (
-              <Image
+            {message.type === "image" &&
+            typeof message.uploadId === "string" &&
+            message.uploadId.length > 0 ? (
+              <img
                 src={`/api/uploads/${message.uploadId}`}
                 alt="Upload"
-                width={900}
-                height={700}
                 className="h-auto w-full rounded-xl object-contain"
-                unoptimized
+                loading="lazy"
               />
             ) : (
               message.content

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import NewChatButton from "@/components/NewChatButton";
 
 type ChatItem = {
@@ -20,7 +21,16 @@ export default function Sidebar({
   chats: ChatItem[];
   hasApiKey: boolean;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
+  const [mounted, setMounted] = useState(false);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const currentPath = mounted ? pathname : "";
 
   return (
     <aside className="flex h-full w-full flex-col gap-6 border-b border-[color:var(--border)] bg-white/70 p-6 backdrop-blur lg:max-w-[280px] lg:border-b-0 lg:border-r lg:h-screen">
@@ -36,7 +46,7 @@ export default function Sidebar({
         <Link
           href="/settings"
           className={`block rounded-2xl border px-4 py-2 text-sm transition ${
-            pathname === "/settings"
+            currentPath === "/settings"
               ? "border-[color:var(--accent)] text-[color:var(--accent)]"
               : "border-[color:var(--border)] hover:border-[color:var(--accent)]"
           }`}
@@ -55,7 +65,7 @@ export default function Sidebar({
           </p>
         )}
         {chats.map((chat) => {
-          const active = pathname === `/chat/${chat.id}`;
+          const active = currentPath === `/chat/${chat.id}`;
           return (
             <div
               key={chat.id}
