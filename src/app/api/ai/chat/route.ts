@@ -95,6 +95,7 @@ export async function POST(request: Request) {
       data: {
         chatId: chat.id,
         role: "user",
+        type: "text",
         content: message,
       },
     });
@@ -109,7 +110,7 @@ export async function POST(request: Request) {
 
     const historyLimit = hasUserKey ? 20 : 8;
     const history = await prisma.message.findMany({
-      where: { chatId: chat.id },
+      where: { chatId: chat.id, type: "text" },
       orderBy: { createdAt: "desc" },
       take: historyLimit,
     });
@@ -150,6 +151,7 @@ export async function POST(request: Request) {
       data: {
         chatId: chat.id,
         role: "assistant",
+        type: "text",
         content: responseText,
       },
     });

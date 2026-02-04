@@ -15,7 +15,7 @@ export default async function ChatPage({
     include: {
       messages: {
         orderBy: { createdAt: "asc" },
-        select: { id: true, role: true, content: true },
+        select: { id: true, role: true, content: true, type: true, uploadId: true },
       },
     },
   });
@@ -39,6 +39,7 @@ export default async function ChatPage({
     .map((message) => ({
       ...message,
       role: message.role as "user" | "assistant",
+      type: message.type || "text",
     }));
 
   return (

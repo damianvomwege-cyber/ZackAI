@@ -22,6 +22,7 @@ model User {
   verificationTokens VerificationToken[]
   chats              Chat[]
   apiKeys            ApiKey[]
+  uploads            Upload[]
 }
 
 model Session {
@@ -68,6 +69,7 @@ model Chat {
   updatedAt DateTime @updatedAt
 
   messages Message[]
+  uploads  Upload[]
 
   @@index([userId])
 }
@@ -78,7 +80,26 @@ model Message {
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
   role      String
   content   String
+  type      String   @default("text")
+  uploadId  String?
+  upload    Upload?  @relation(fields: [uploadId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
+  @@index([chatId])
+}
+
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  messages Message[]
+
+  @@index([userId])
   @@index([chatId])
 }
