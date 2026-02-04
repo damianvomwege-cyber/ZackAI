@@ -22,13 +22,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Datei fehlt." }, { status: 400 });
   }
 
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Nur Bilder erlaubt." }, { status: 400 });
+  const isImage = file.type.startsWith("image/");
+  const isAudio = file.type.startsWith("audio/");
+
+  if (!isImage && !isAudio) {
+    return NextResponse.json(
+      { error: "Nur Bilder oder Audio erlaubt." },
+      { status: 400 }
+    );
   }
 
-  if (file.size > MAX_BYTES) {
+  if (isImage && file.size > MAX_IMAGE_BYTES) {
     return NextResponse.json(
-      { error: "Bild zu groß (max 4MB)." },
+      { error: "Bild zu gro? (max 4MB)." },
+      { status: 400 }
+    );
+  }
+
+  if (isAudio && file.size > MAX_AUDIO_BYTES) {
+    return NextResponse.json(
+      {
+        error: `Audio zu gro? (max ${Math.round(
+          MAX_AUDIO_BYTES / 1024 / 1024
+        )}MB).`,
+      },
       { status: 400 }
     );
   }
